@@ -1,0 +1,144 @@
+name: FoodFleet
+
+entities:
+  User:
+    authenticable: true
+    properties:
+      - name
+      - name: email
+        type: email
+      - name: role
+        type: choice
+        options:
+          values: [customer, owner, admin]
+        default: customer
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: restricted
+          allow: User
+          condition: self
+      update:
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: admin
+      signup:
+        - access: public
+
+  Restaurant:
+    properties:
+      - name: name
+        type: string
+      - name: description
+        type: text
+      - name: cuisine
+        type: string
+      - name: image
+        type: image
+        options:
+          sizes:
+            thumbnail:
+              width: 400
+              height: 300
+            large:
+              width: 1024
+              height: 768
+    belongsTo:
+      - name: owner
+        entity: User
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: public
+      update:
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: restricted
+          allow: User
+          condition: self
+
+  MenuItem:
+    properties:
+      - name: name
+        type: string
+      - name: description
+        type: text
+      - name: price
+        type: money
+        options:
+          currency: 'USD'
+      - name: image
+        type: image
+        options:
+          sizes:
+            thumbnail:
+              width: 100
+              height: 100
+    belongsTo:
+      - Restaurant
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: public
+      update:
+        - access: restricted
+          allow: User
+          condition: self # User must be owner of the parent restaurant
+      delete:
+        - access: restricted
+          allow: User
+          condition: self # User must be owner of the parent restaurant
+
+  Order:
+    properties:
+      - name: totalPrice
+        type: money
+        options:
+          currency: 'USD'
+      - name: status
+        type: choice
+        options:
+          values: [pending, preparing, delivered, cancelled]
+        default: pending
+    belongsTo:
+      - name: customer
+        entity: User
+    belongsToMany:
+      - MenuItem
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: restricted
+          allow: User
+          condition: self
+      update:
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: admin
+
+
+# Health check endpoint for connection testing
+endpoints:
+  health:
+    path: /api/health
+    method: GET
+    policies: []
+    handler: healthCheck
+
+# CORS configuration
+cors:
+  enabled: true
+  config: cors.js
